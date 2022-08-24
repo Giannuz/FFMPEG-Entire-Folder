@@ -1,0 +1,56 @@
+#!/bin/bash
+
+
+#function find_screen {
+#    if screen -ls "$1" | grep -o "^\s*[0-9]*\.$1[ "$'\t'"](" --color=NEVER -m 1 | grep -oh "[0-9]*\.$1" --color=NEVER -m 1 -q >/dev/null; then
+#        screen -ls "$1" | grep -o "^\s*[0-9]*\.$1[ "$'\t'"](" --color=NEVER -m 1 | grep -oh "[0-9]*\.$1" --color=NEVER -m 1 2>/dev/null
+#        return 0
+#    elses77]
+#        echo "$1"
+#        return 1
+#    fi
+#}
+
+#if ! find_screen "conversioneffmpeg" >/dev/null; then
+#  screen -S conversioneffmpeg -m /bin/bash -cx "./.conversione '${1}' '${2}'" 
+#  exit
+#fi
+
+clear
+shopt -s globstar nocaseglob
+
+printf "Avvio conversione... (Percorso: $1) (Tipologia: $2) \n\n"
+
+num=0
+numnot=0
+dimensioneiniz=`du -s "$1" | grep -o -E '[0-9]+'`
+
+for i in "$1"/**/*."$2";
+  do path=`echo "$i" | cut -d'.' -f1`
+
+  completepath=$(readlink -m "${i}")
+  hidepath=$(readlink -m "${path%/*}/.${path##*/}")
+  path=$(readlink -m "${path}")
+
+	# Debug
+	# echo $completepath
+	# echo $hidepath
+	# echo $path
+
+  ffmpeg-bar -i "$i" "${hidepath}.mov"
+  if [ -f "${hidepath}.mov" ]; then
+    let "num+=1"
+    rm "${completepath}"
+    mv "${hidepath}.mov" "${path}.mov"
+  else 
+      echo "\n Conversione di questo file annullata! Procedo al prossimo \n"
+      let "numnot+=1"
+  fi
+done
+
+dimensionefin=`du -s "$1" | grep -o -E '[0-9]+'`
+dimensionerisp="`expr $dimensioneiniz - $dimensionefin | numfmt --to=iec`"
+
+printf "\n Conversione di ${num} file é stata effettuata con successo! ($numnot falliti) Hai risparmiato $dimensionerisp \n\n"
+
+echo "Conversione di ${num} file é stata effettuata con successo! ($numnot falliti) Hai risparmiato $dimensionerisp" | mail -s "Conversione FFMPEG" a
