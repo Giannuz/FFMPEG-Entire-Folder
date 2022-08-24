@@ -2,4 +2,4 @@
 This script convert all files inside a directory and subdirectories
 For use this script
 
-`./conversione directory formatofvideofile`
+`./conversione directory format_video_input`
