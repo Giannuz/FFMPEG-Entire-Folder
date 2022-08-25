@@ -19,38 +19,77 @@
 clear
 shopt -s globstar nocaseglob
 
-printf "Avvio conversione... (Percorso: $1) (Tipologia: $2) \n\n"
+function conversione(){
 
-num=0
-numnot=0
-dimensioneiniz=`du -s "$1" | grep -o -E '[0-9]+'`
+  printf "Avvio conversione... (Percorso: $cartella) (formato input: $inputformat) (formato output: $outputformat) \n\n"
 
-for i in "$1"/**/*."$2";
-  do path=`echo "$i" | cut -d'.' -f1`
+  num=0
+  numnot=0
+  dimensioneiniz=`du -s "$cartella" | grep -o -E '[0-9]+'`
 
-  completepath=$(readlink -m "${i}")
-  hidepath=$(readlink -m "${path%/*}/.${path##*/}")
-  path=$(readlink -m "${path}")
+  for i in "$cartella"/**/*."$inputformat";
+    do path=`echo "$i" | cut -d'.' -f1`
 
-	# Debug
-	# echo $completepath
-	# echo $hidepath
-	# echo $path
+    completepath=$(readlink -m "${i}")
+    hidepath=$(readlink -m "${path%/*}/.${path##*/}")
+    path=$(readlink -m "${path}")
 
-  ffmpeg-bar -i "$i" "${hidepath}.mov"
-  if [ -f "${hidepath}.mov" ]; then
-    let "num+=1"
-    rm "${completepath}"
-    mv "${hidepath}.mov" "${path}.mov"
-  else 
+	  # Debug
+	  # echo $completepath
+	  # echo $hidepath
+	  # echo $path
+
+    ffmpeg-bar -i "$i" "${hidepath}.$outputformat"
+    if [ -f "${hidepath}.$outputformat" ]; then
+      let "num+=1"
+      rm "${completepath}"
+      mv "${hidepath}.$outputformat" "${path}.$outputformat"
+    else 
       echo "\n Conversione di questo file annullata! Procedo al prossimo \n"
       let "numnot+=1"
-  fi
-done
+    fi
 
-dimensionefin=`du -s "$1" | grep -o -E '[0-9]+'`
-dimensionerisp="`expr $dimensioneiniz - $dimensionefin | numfmt --to=iec`"
 
-printf "\n Conversione di ${num} file é stata effettuata con successo! ($numnot falliti) Hai risparmiato $dimensionerisp \n\n"
+  done
 
-echo "Conversione di ${num} file é stata effettuata con successo! ($numnot falliti) Hai risparmiato $dimensionerisp" | mail -s "Conversione FFMPEG" a
+  dimensionefin=`du -s "$cartella" | grep -o -E '[0-9]+'`
+  dimensionerisp="`expr $dimensioneiniz - $dimensionefin | numfmt --to=iec`"
+  percent="`expr $dimensionefin * 100/$dimensioneiniz | numfmt --to=iec`"
+
+  printf "\n Conversione di ${num} file é stata effettuata con successo! ($numnot falliti) Hai risparmiato $dimensionerisp \n\n"
+
+  #echo "Conversione di ${num} file é stata effettuata con successo! ($numnot falliti) Hai risparmiato $dimensionerisp" #| mail -s "Conversione FFMPEG" a
+
+}
+
+
+if [ "$1" == "-h" ]; then
+	printf "\n Usa il comando ./conversione *nome cartella* *formato input* *formato output* \n Oppure usa semplicemente ./conversione per essere guidato passo passo \n\n"
+
+  exit 0
+
+fi
+
+if [ -z "$1" ]; then
+    printf "\n non hai specificato nulla, sei entrato in modalità guidata \n"
+    printf "\n inserisci la cartella: " 
+    read cartellaprov
+    cartella=${cartellaprov//[ ]/\ }
+
+    printf "\n inserisci il formato dei file che vuoi convertire: "
+    read inputformat
+
+    printf "\n inserici il formato in cui vuoi convertire: "
+    read outputformat
+
+    conversione
+
+else
+
+    cartella=$1
+    inputformat=$2
+    outputformat=$3
+
+    conversione
+    
+fi
