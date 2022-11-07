@@ -59,7 +59,7 @@ function conversione(){
   printf "\n Conversione di ${num} file é stata effettuata con successo! ($numnot falliti) Hai risparmiato $dimensionerisp \n\n"
 
   #echo "Conversione di ${num} file é stata effettuata con successo! ($numnot falliti) Hai risparmiato $dimensionerisp" #| mail -s "Conversione FFMPEG" a
-
+  # You can use this line for send a notification when there's a successful convertion
 }
 
 
